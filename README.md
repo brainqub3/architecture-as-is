@@ -17,7 +17,7 @@ The skill guides an agent to:
 - avoid polluting the target codebase with stray tests or probe files
 - separate observed facts from inferred claims and unknowns
 - trace representative user or system flows
-- produce an evidence-backed as-built architecture report
+- produce an evidence-backed as-built architecture report as readable HTML
 
 ## Install
 
@@ -50,7 +50,7 @@ Use this when you need to answer questions like:
 
 ## Output
 
-The skill produces a structured report covering:
+The skill produces a readable, self-contained HTML report covering:
 
 - scope and assumptions
 - executive summary
@@ -64,6 +64,14 @@ The skill produces a structured report covering:
 - command log
 - next verification steps
 
+The report is saved in the explored repository under:
+
+```text
+architecture_as_is/architecture_as_is_YYYYMMDD_HHMMSS.html
+```
+
+The timestamp uses local machine time.
+
 ## Repository Layout
 
 ```text
@@ -75,6 +83,6 @@ The skill produces a structured report covering:
 
 ## Safety
 
-The skill is intentionally read-mostly. It tells the agent not to refactor, create new tests, update snapshots, run migrations, touch production systems, expose secrets, or clean up generated artifacts unless the user explicitly asks.
+The skill is intentionally read-mostly apart from the final HTML report. It tells the agent not to refactor, create new tests, update snapshots, run migrations, touch production systems, expose secrets, or clean up generated artifacts unless the user explicitly asks.
 
 Review any skill before use. Skills run with the permissions of the agent that loads them.

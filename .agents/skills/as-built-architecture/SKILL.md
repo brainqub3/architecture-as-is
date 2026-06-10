@@ -1,6 +1,6 @@
 ---
 name: as-built-architecture
-description: Use this skill whenever the user asks to understand, map, audit, reverse-engineer, document, or reason about the architecture of an existing codebase, especially a vibe-coded, prototype, legacy, inherited, or poorly documented repo. This skill guides an agent to discover the architecture as it actually exists, not as it was intended, by combining static inspection, dependency and entrypoint discovery, safe execution, evidence-backed flow tracing, upfront scoping questions, and an as-built architecture report.
+description: Use this skill whenever the user asks to understand, map, audit, reverse-engineer, document, or reason about the architecture of an existing codebase, especially a vibe-coded, prototype, legacy, inherited, or poorly documented repo. This skill guides an agent to discover the architecture as it actually exists, not as it was intended, by combining static inspection, dependency and entrypoint discovery, safe execution, evidence-backed flow tracing, upfront scoping questions, and a timestamped readable HTML as-built architecture report.
 ---
 
 # As-Built Architecture Discovery
@@ -167,7 +167,7 @@ When suggesting next steps, keep them verification-oriented unless the user asks
 
 ## Report structure
 
-Use this structure unless the user requests a different output.
+Use this structure unless the user requests a different output. The final report must be written as a readable, self-contained HTML file.
 
 ```markdown
 **Scope And Assumptions**
@@ -227,6 +227,23 @@ Use this structure unless the user requests a different output.
 - Short list of the highest-value follow-up checks.
 ```
 
+## HTML report output
+
+At the end of every architecture discovery run, create a readable HTML report that details the architecture. This report is the primary deliverable.
+
+- Save the report under a folder named `architecture_as_is` at the explored repository root. If the repository root is uncertain, use the current working directory and state that assumption.
+- Create the folder if it does not already exist.
+- Put a timestamp on the filename using local machine time in `YYYYMMDD_HHMMSS` format.
+- Use this filename pattern: `architecture_as_is/architecture_as_is_YYYYMMDD_HHMMSS.html`.
+- Make the HTML self-contained: embed CSS in a `<style>` block and do not require external assets, CDNs, build tools, or network access to read the report.
+- Keep the report easy to scan: include a title, generation timestamp, scope, table of contents, summary cards or tables, clear section headings, evidence tables, confidence labels, and command log.
+- Include the same substantive sections as the report structure above.
+- Escape code snippets, command output, file paths, and user-provided text before inserting them into HTML.
+- If diagrams are useful, include Mermaid source or simple text diagrams in the HTML without relying on a remote renderer. Do not add separate diagram files unless the user asks.
+- Run `git status --short` before and after writing the report. Report any generated or changed files in the command log and final response.
+
+This timestamped HTML report is the one expected default write. Do not create additional report assets, probe files, tests, snapshots, or cleanup changes unless the user explicitly asks.
+
 ## Evidence standards
 
 - Include file paths and line numbers for important claims when possible.
@@ -241,7 +258,7 @@ Use this structure unless the user requests a different output.
 - Do not refactor or edit code unless the user explicitly asks.
 - Do not create new tests, snapshots, fixtures, or probe files inside the target repo unless the user explicitly asks for them.
 - Do not update snapshots, golden files, or test configuration during discovery.
-- Do not clean up files, reset git state, or remove generated artifacts.
+- Do not clean up files, reset git state, or remove generated artifacts. The expected generated artifact is the timestamped HTML report under `architecture_as_is`.
 - Do not assume conventional architecture just because a framework is present.
 - Do not hide command failures; they are useful architecture evidence.
 - Do not expose secrets.
