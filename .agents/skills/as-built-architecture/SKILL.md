@@ -68,7 +68,7 @@ Use manifests and imports to understand the real module graph.
 - Cycles, god modules, duplicated abstractions, framework leakage, and direct data access from unexpected layers.
 - Code paths that bypass the apparent architecture, such as direct database calls in UI routes or business logic inside controllers.
 
-Use language-specific tooling where it exists, but keep the findings evidence-backed.
+Use language-specific tooling where it exists, but keep the findings evidence-backed. Before using tools for dependency maps, unused-code checks, SAST, diagrams, runtime traces, database introspection, or repository packaging, read `references/tooling-matrix.md` and apply its license-safe defaults.
 
 ### 4. Run safe commands to test runtime reality
 
@@ -145,7 +145,7 @@ Describe the current architecture in terms of:
 - Deployment and operational assumptions.
 - Test and build coverage.
 
-Use diagrams when they reduce ambiguity. Mermaid is usually enough. Label diagrams as "as-built" and avoid showing planned or desired architecture unless the user separately asks for it.
+Use diagrams when they reduce ambiguity. Default to Mermaid source unless the user asks for another format or the repo already has a diagram-as-code convention. Label diagrams as "as-built" and avoid showing planned or desired architecture unless the user separately asks for it.
 
 ### 9. Surface implications, not redesigns
 

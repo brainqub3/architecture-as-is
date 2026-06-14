@@ -14,6 +14,7 @@ The skill guides an agent to:
 
 - inspect the repository structure, manifests, entrypoints, scripts, tests, data models, and integrations
 - run safe existing checks where appropriate
+- prefer local, free, open-source tooling defaults for optional tool-assisted discovery
 - avoid polluting the target codebase with stray tests or probe files
 - separate observed facts from inferred claims and unknowns
 - trace representative user or system flows
@@ -79,6 +80,8 @@ The timestamp uses local machine time.
   skills/
     as-built-architecture/
       SKILL.md
+      references/
+        tooling-matrix.md
 ```
 
 ## Safety
