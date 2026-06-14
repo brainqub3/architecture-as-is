@@ -68,7 +68,7 @@ Use manifests and imports to understand the real module graph.
 - Cycles, god modules, duplicated abstractions, framework leakage, and direct data access from unexpected layers.
 - Code paths that bypass the apparent architecture, such as direct database calls in UI routes or business logic inside controllers.
 
-Use language-specific tooling where it exists, but keep the findings evidence-backed.
+Use language-specific tooling where it exists, but keep the findings evidence-backed. Before using tools for dependency maps, unused-code checks, SAST, diagrams, runtime traces, database introspection, or repository packaging, read `references/tooling-matrix.md` and apply its license-safe defaults.
 
 ### 4. Run safe commands to test runtime reality
 
@@ -145,7 +145,7 @@ Describe the current architecture in terms of:
 - Deployment and operational assumptions.
 - Test and build coverage.
 
-Use diagrams when they reduce ambiguity. Mermaid is usually enough. Label diagrams as "as-built" and avoid showing planned or desired architecture unless the user separately asks for it.
+Use diagrams when they reduce ambiguity. Default to Mermaid source unless the user asks for another format or the repo already has a diagram-as-code convention. Label diagrams as "as-built" and avoid showing planned or desired architecture unless the user separately asks for it.
 
 ### 9. Surface implications, not redesigns
 
@@ -164,6 +164,37 @@ Call out:
 - Places where architecture depends on convention instead of explicit contracts.
 
 When suggesting next steps, keep them verification-oriented unless the user asks for remediation.
+
+## Artifact hygiene
+
+Keep architecture discovery artifacts organized and easy to review. All artifacts created by this skill must live under one run folder:
+
+```text
+architecture_as_is/
+  YYYYMMDD_HHMMSS/
+    architecture_as_is.html
+    manifest.md
+    evidence/
+    diagrams/
+    exports/
+    screenshots/
+```
+
+Rules:
+
+- Create one timestamped run folder per architecture discovery run, using local machine time in `YYYYMMDD_HHMMSS` format.
+- Save the primary HTML report as `architecture_as_is/YYYYMMDD_HHMMSS/architecture_as_is.html`.
+- Create `manifest.md` for every run. List generated files, why each exists, the command or tool that produced it, and whether it is intended to be committed, ignored, or reviewed and deleted.
+- Put optional evidence files such as command logs, inventories, route listings, and summarized trace notes under `evidence/`.
+- Put Mermaid, text diagrams, C4 DSL, and other diagram source files under `diagrams/`.
+- Put machine-readable tool output, dependency graphs, scanner summaries, and packaged context under `exports/`.
+- Put runtime screenshots or visual trace images under `screenshots/`.
+- Create optional subfolders only when needed. Do not create empty folders just to satisfy the template.
+- Do not write architecture artifacts outside the run folder unless the user explicitly asks for a different destination.
+- Do not overwrite older runs. If a report is regenerated, create a new timestamped run folder.
+- Do not include secrets, raw credentials, dependency folders, build output, coverage folders, giant raw logs, or unbounded scanner output in architecture artifacts.
+
+Artifacts produced incidentally by existing project commands, such as framework caches or build outputs, are not architecture artifacts. Do not move or clean them silently; record them in the report and manifest.
 
 ## Report structure
 
@@ -231,18 +262,19 @@ Use this structure unless the user requests a different output. The final report
 
 At the end of every architecture discovery run, create a readable HTML report that details the architecture. This report is the primary deliverable.
 
-- Save the report under a folder named `architecture_as_is` at the explored repository root. If the repository root is uncertain, use the current working directory and state that assumption.
-- Create the folder if it does not already exist.
-- Put a timestamp on the filename using local machine time in `YYYYMMDD_HHMMSS` format.
-- Use this filename pattern: `architecture_as_is/architecture_as_is_YYYYMMDD_HHMMSS.html`.
+- Save the run under a folder named `architecture_as_is` at the explored repository root. If the repository root is uncertain, use the current working directory and state that assumption.
+- Create a timestamped run folder if it does not already exist.
+- Put the timestamp on the run folder using local machine time in `YYYYMMDD_HHMMSS` format.
+- Use this primary report filename pattern: `architecture_as_is/YYYYMMDD_HHMMSS/architecture_as_is.html`.
+- Write the run manifest as `architecture_as_is/YYYYMMDD_HHMMSS/manifest.md`.
 - Make the HTML self-contained: embed CSS in a `<style>` block and do not require external assets, CDNs, build tools, or network access to read the report.
 - Keep the report easy to scan: include a title, generation timestamp, scope, table of contents, summary cards or tables, clear section headings, evidence tables, confidence labels, and command log.
 - Include the same substantive sections as the report structure above.
 - Escape code snippets, command output, file paths, and user-provided text before inserting them into HTML.
-- If diagrams are useful, include Mermaid source or simple text diagrams in the HTML without relying on a remote renderer. Do not add separate diagram files unless the user asks.
-- Run `git status --short` before and after writing the report. Report any generated or changed files in the command log and final response.
+- If diagrams are useful, include Mermaid source or simple text diagrams in the HTML without relying on a remote renderer. If separate diagram source files are useful, place them under the run folder's `diagrams/` subfolder.
+- Run `git status --short` before and after writing architecture artifacts. Report any generated or changed files in the command log, manifest, and final response.
 
-This timestamped HTML report is the one expected default write. Do not create additional report assets, probe files, tests, snapshots, or cleanup changes unless the user explicitly asks.
+The timestamped run folder is the expected default write. Keep the primary HTML report and manifest mandatory; create additional architecture artifacts only when they materially improve reviewability. Do not create probe files, tests, snapshots, or cleanup changes unless the user explicitly asks.
 
 ## Evidence standards
 
@@ -258,7 +290,7 @@ This timestamped HTML report is the one expected default write. Do not create ad
 - Do not refactor or edit code unless the user explicitly asks.
 - Do not create new tests, snapshots, fixtures, or probe files inside the target repo unless the user explicitly asks for them.
 - Do not update snapshots, golden files, or test configuration during discovery.
-- Do not clean up files, reset git state, or remove generated artifacts. The expected generated artifact is the timestamped HTML report under `architecture_as_is`.
+- Do not clean up files, reset git state, or remove generated artifacts. The expected generated artifacts are the timestamped run folder, primary HTML report, and manifest under `architecture_as_is`.
 - Do not assume conventional architecture just because a framework is present.
 - Do not hide command failures; they are useful architecture evidence.
 - Do not expose secrets.
