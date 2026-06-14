@@ -16,6 +16,7 @@ The skill guides an agent to:
 - run safe existing checks where appropriate
 - prefer local, free, open-source tooling defaults for optional tool-assisted discovery
 - avoid polluting the target codebase with stray tests or probe files
+- keep generated architecture artifacts inside a timestamped run folder
 - separate observed facts from inferred claims and unknowns
 - trace representative user or system flows
 - produce an evidence-backed as-built architecture report as readable HTML
@@ -68,10 +69,10 @@ The skill produces a readable, self-contained HTML report covering:
 The report is saved in the explored repository under:
 
 ```text
-architecture_as_is/architecture_as_is_YYYYMMDD_HHMMSS.html
+architecture_as_is/YYYYMMDD_HHMMSS/architecture_as_is.html
 ```
 
-The timestamp uses local machine time.
+Each run also includes a `manifest.md` in the same timestamped folder. Optional artifacts such as diagrams, evidence logs, tool exports, and screenshots are kept under typed subfolders in that run folder. The timestamp uses local machine time.
 
 ## Repository Layout
 
