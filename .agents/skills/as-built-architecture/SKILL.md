@@ -145,7 +145,7 @@ Describe the current architecture in terms of:
 - Deployment and operational assumptions.
 - Test and build coverage.
 
-Use diagrams when they reduce ambiguity. Default to Mermaid source unless the user asks for another format or the repo already has a diagram-as-code convention. Label diagrams as "as-built" and avoid showing planned or desired architecture unless the user separately asks for it.
+Use diagrams when they reduce ambiguity. Author diagrams as Mermaid `.mmd` source by default unless the user asks for another format or the repo already has a diagram-as-code convention. Mermaid source is plain text, so the HTML report must not rely on raw Mermaid source, Markdown fences, `<pre class="mermaid">`, CDN scripts, or a browser-side Mermaid runtime to turn diagrams into pictures. When render tooling is in scope, pre-render `.mmd` source to static SVG and inline the `<svg>` markup in the report. When render tooling is out of scope, use an ASCII diagram and/or a clearly labeled unrendered Mermaid source block. Label diagrams as "as-built" and avoid showing planned or desired architecture unless the user separately asks for it.
 
 ### 9. Surface implications, not redesigns
 
@@ -186,7 +186,7 @@ Rules:
 - Save the primary HTML report as `architecture_as_is/YYYYMMDD_HHMMSS/architecture_as_is.html`.
 - Create `manifest.md` for every run. List generated files, why each exists, the command or tool that produced it, and whether it is intended to be committed, ignored, or reviewed and deleted.
 - Put optional evidence files such as command logs, inventories, route listings, and summarized trace notes under `evidence/`.
-- Put Mermaid, text diagrams, C4 DSL, and other diagram source files under `diagrams/`.
+- Put diagram files under `diagrams/`: Mermaid `.mmd` source, rendered `.svg` files used for inlining, text diagrams, C4 DSL, and other diagram source files.
 - Put machine-readable tool output, dependency graphs, scanner summaries, and packaged context under `exports/`.
 - Put runtime screenshots or visual trace images under `screenshots/`.
 - Create optional subfolders only when needed. Do not create empty folders just to satisfy the template.
@@ -267,12 +267,31 @@ At the end of every architecture discovery run, create a readable HTML report th
 - Put the timestamp on the run folder using local machine time in `YYYYMMDD_HHMMSS` format.
 - Use this primary report filename pattern: `architecture_as_is/YYYYMMDD_HHMMSS/architecture_as_is.html`.
 - Write the run manifest as `architecture_as_is/YYYYMMDD_HHMMSS/manifest.md`.
-- Make the HTML self-contained: embed CSS in a `<style>` block and do not require external assets, CDNs, build tools, or network access to read the report.
+- Make the HTML self-contained: embed CSS in a `<style>` block, inline rendered SVG diagrams, and do not require external assets, CDNs, build tools, browser-side diagram JavaScript, or network access to read the report.
 - Keep the report easy to scan: include a title, generation timestamp, scope, table of contents, summary cards or tables, clear section headings, evidence tables, confidence labels, and command log.
 - Include the same substantive sections as the report structure above.
-- Escape code snippets, command output, file paths, and user-provided text before inserting them into HTML.
-- If diagrams are useful, include Mermaid source or simple text diagrams in the HTML without relying on a remote renderer. If separate diagram source files are useful, place them under the run folder's `diagrams/` subfolder.
+- Escape code snippets, command output, file paths, Mermaid source shown as text, and user-provided text before inserting them into HTML. Do not escape inlined `<svg>` markup; paste the sanitized SVG element verbatim so the browser can render it.
+- If diagrams are useful, follow "Diagram rendering in HTML reports" below. Never present raw Mermaid source as a finished diagram in the HTML report.
 - Run `git status --short` before and after writing architecture artifacts. Report any generated or changed files in the command log, manifest, and final response.
+
+### Diagram rendering in HTML reports
+
+Mermaid diagrams render in a browser only when a Mermaid runtime is imported and initialized. This report format is intentionally offline and self-contained, so do not depend on a CDN, `<script type="module">`, `mermaid.initialize(...)`, or `<pre class="mermaid">` at report-read time.
+
+When diagrams are useful:
+
+1. Save each Mermaid diagram as a `.mmd` file under the run folder's `diagrams/` subfolder.
+2. If dependency installation and headless browser execution are in scope, render each `.mmd` to `.svg` with Mermaid CLI: `npx -p @mermaid-js/mermaid-cli mmdc -i diagrams/component-graph.mmd -o diagrams/component-graph.svg`. Use an offline-safe Mermaid config when practical, including `htmlLabels: false`, `flowchart.htmlLabels: false`, and a generic `themeVariables.fontFamily`. Give each rendered SVG a unique id when the renderer supports it; otherwise post-process duplicate SVG ids and `url(#...)` references before inlining.
+3. Inline the generated `<svg>...</svg>` markup inside a `<figure>` with a `<figcaption>`. Drop XML prologs or doctypes. Keep the `xmlns` attribute. Reject or regenerate SVG that contains `<script>`, `<foreignObject>`, `@font-face`, `@import`, external image/font references, or non-namespace `http(s)` URLs.
+4. Record the `.mmd`, rendered `.svg`, config file if used, render command, and any SVG cleanup in the manifest and command log.
+5. If a Mermaid renderer is not in scope or fails, include a simple ASCII diagram in `<pre>` and optionally include the HTML-escaped Mermaid source in a clearly labeled `<pre class="mermaid-source">` block. State that the source is unrendered because renderer setup was out of scope or failed.
+
+Hard rules:
+
+- Do not put bare ```` ```mermaid ```` fences into the HTML body. HTML does not process Markdown fences.
+- Do not put `<pre class="mermaid">` or another raw Mermaid source element into the HTML as though it were a rendered chart.
+- Do not add a CDN or inlined Mermaid runtime to the final report to render diagrams client-side.
+- Do not reference generated diagrams with `<img src="diagrams/...">`; that breaks self-containment when the HTML file moves.
 
 The timestamped run folder is the expected default write. Keep the primary HTML report and manifest mandatory; create additional architecture artifacts only when they materially improve reviewability. Do not create probe files, tests, snapshots, or cleanup changes unless the user explicitly asks.
 

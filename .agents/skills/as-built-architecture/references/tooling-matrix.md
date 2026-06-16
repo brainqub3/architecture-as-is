@@ -12,7 +12,8 @@ Default does not mean "always run." Use these tools only when relevant to the di
 | --- | --- | --- |
 | `default` | `dependency-cruiser` | Primary JS/TS dependency-boundary and import graph evidence. MIT licensed. |
 | `default` | `knip` | JS/TS unused files, dependencies, and exports. ISC licensed. |
-| `default` | Mermaid | Default diagram source format for reports. MIT licensed. |
+| `default` | Mermaid | Default diagram authoring format for reports. Mermaid source is kept as `.mmd`; it is not a renderer by itself. MIT licensed. |
+| `conditional` | `@mermaid-js/mermaid-cli` (`mmdc`) | Render Mermaid `.mmd` files to static SVG for inlining into self-contained HTML reports when dependency installation and headless browser execution are in scope. MIT licensed. The shipped HTML must not need `mmdc`, browser-side Mermaid JavaScript, or network access. |
 | `default` | Semgrep CE | Local SAST and pattern scanning when security-sensitive architecture boundaries need evidence. LGPL 2.1. Do not use Pro or Platform-only features by default. |
 | `default` | Playwright | Runtime route and UI traces when app execution is allowed. Apache-2.0 licensed. |
 | `default` | Repomix | Bounded Codex review packaging when useful, with strict exclusions for secrets, dependency folders, build output, logs, coverage, and generated artifacts. MIT licensed. |
@@ -41,7 +42,7 @@ Use Semgrep CE by default only for local, open-source scanning. Avoid commercial
 
 ## Diagrams
 
-Use Mermaid source as the default report diagram format. Keep Structurizr optional for C4 or existing Structurizr workflows, and include generated DSL only when that is part of the requested deliverable.
+Author report diagrams as Mermaid by default, then render them to static inline SVG when render tooling is in scope. Keep the `.mmd` source under `diagrams/`, record the render command, and inline the sanitized `<svg>` in the HTML report. If rendering is out of scope, show an ASCII diagram and/or a clearly labeled unrendered Mermaid source block. Keep Structurizr optional for C4 or existing Structurizr workflows, and include generated DSL only when that is part of the requested deliverable.
 
 ## License references
 
@@ -52,6 +53,7 @@ Use Mermaid source as the default report diagram format. Keep Structurizr option
 - Compodoc: <https://github.com/compodoc/compodoc>
 - Supabase CLI: <https://github.com/supabase/cli>
 - Mermaid: <https://github.com/mermaid-js/mermaid/blob/develop/LICENSE>
+- Mermaid CLI: <https://github.com/mermaid-js/mermaid-cli>, <https://github.com/mermaid-js/mermaid-cli/blob/master/LICENSE>
 - Structurizr CLI: <https://github.com/structurizr/cli>
 - Structurizr Lite: <https://docs.structurizr.com/lite>
 - GitHub CodeQL CLI: <https://docs.github.com/en/code-security/concepts/code-scanning/codeql/codeql-cli>
