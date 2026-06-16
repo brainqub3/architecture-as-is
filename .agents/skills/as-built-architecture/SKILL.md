@@ -145,7 +145,7 @@ Describe the current architecture in terms of:
 - Deployment and operational assumptions.
 - Test and build coverage.
 
-Use diagrams when they reduce ambiguity. Default to Mermaid source unless the user asks for another format or the repo already has a diagram-as-code convention. Label diagrams as "as-built" and avoid showing planned or desired architecture unless the user separately asks for it.
+Use diagrams when they reduce ambiguity. Author diagrams as Mermaid by default, and keep each diagram's `.mmd` source under the run folder's `diagrams/` subfolder, unless the user asks for another format or the repo already has a diagram-as-code convention. Mermaid source is plain text: it only becomes a picture when a renderer turns it into SVG, so the diagram that lands in the HTML report must be a pre-rendered, inlined `<svg>` (see "Diagrams in the HTML report"), not raw Mermaid source presented as a finished diagram. When no renderer is in execution scope, fall back to a clearly labeled unrendered-source block or an ASCII text diagram. Label diagrams as "as-built" and avoid showing planned or desired architecture unless the user separately asks for it.
 
 ### 9. Surface implications, not redesigns
 
@@ -186,7 +186,7 @@ Rules:
 - Save the primary HTML report as `architecture_as_is/YYYYMMDD_HHMMSS/architecture_as_is.html`.
 - Create `manifest.md` for every run. List generated files, why each exists, the command or tool that produced it, and whether it is intended to be committed, ignored, or reviewed and deleted.
 - Put optional evidence files such as command logs, inventories, route listings, and summarized trace notes under `evidence/`.
-- Put Mermaid, text diagrams, C4 DSL, and other diagram source files under `diagrams/`.
+- Put diagram sources under `diagrams/`: Mermaid `.mmd`, text diagrams, C4 DSL, and any rendered `.svg` produced from them for inlining into the report.
 - Put machine-readable tool output, dependency graphs, scanner summaries, and packaged context under `exports/`.
 - Put runtime screenshots or visual trace images under `screenshots/`.
 - Create optional subfolders only when needed. Do not create empty folders just to satisfy the template.
@@ -267,12 +267,46 @@ At the end of every architecture discovery run, create a readable HTML report th
 - Put the timestamp on the run folder using local machine time in `YYYYMMDD_HHMMSS` format.
 - Use this primary report filename pattern: `architecture_as_is/YYYYMMDD_HHMMSS/architecture_as_is.html`.
 - Write the run manifest as `architecture_as_is/YYYYMMDD_HHMMSS/manifest.md`.
-- Make the HTML self-contained: embed CSS in a `<style>` block and do not require external assets, CDNs, build tools, or network access to read the report.
+- Make the HTML self-contained: embed CSS in a `<style>` block, embed any diagrams as inline `<svg>`, and do not require external assets, CDNs, build tools, JavaScript, or network access to read the report. "Self-contained" means the report must render correctly when opened from a local file with the network disconnected and scripts disabled. This rules out a CDN `<script src>` that pulls a diagram runtime, and it also rules out hand-inlining the multi-hundred-KB Mermaid JavaScript bundle with a `mermaid.initialize`/`run` call. The supported way to show a diagram is to pre-render it to static SVG and paste that `<svg>` inline (see "Diagrams in the HTML report").
 - Keep the report easy to scan: include a title, generation timestamp, scope, table of contents, summary cards or tables, clear section headings, evidence tables, confidence labels, and command log.
+- Convert the "Report structure" template into real HTML, not pasted Markdown. The template above is written in Markdown for readability, but the report is an HTML document where Markdown syntax is not special. Pipe tables must become `<table>`/`<tr>`/`<th>`/`<td>`, `**bold**` headers must become `<h2>`/`<strong>`, numbered and bulleted lists must become `<ol>`/`<ul>`/`<li>`, and fenced blocks must become `<pre><code>`. Never paste literal `|`-and-`---` table syntax or `**` markers into the HTML body; in a browser they show as plain-text characters instead of tables and headings.
 - Include the same substantive sections as the report structure above.
-- Escape code snippets, command output, file paths, and user-provided text before inserting them into HTML.
-- If diagrams are useful, include Mermaid source or simple text diagrams in the HTML without relying on a remote renderer. If separate diagram source files are useful, place them under the run folder's `diagrams/` subfolder.
+- Escape code snippets, command output, file paths, and user-provided text before inserting them into HTML. This applies to text regions only. Do not HTML-escape the markup of an inlined `<svg>` element — escaping its tags and attributes would corrupt the vector geometry and stop it rendering; paste the `<svg>` verbatim. When you fall back to showing Mermaid source as text in a `<pre>`/`<details>` block, that source is text and must be HTML-escaped (escape `&` first, then `<` and `>`) so Mermaid arrow syntax round-trips when copied back into a renderer.
+- For every diagram, follow "Diagrams in the HTML report" below: keep the `.mmd` source under `diagrams/`, render it to static SVG and inline that SVG when render tooling is in scope, and otherwise use the labeled-source or ASCII fallback. Never present raw Mermaid source as a finished diagram.
 - Run `git status --short` before and after writing architecture artifacts. Report any generated or changed files in the command log, manifest, and final response.
+
+### Diagrams in the HTML report
+
+Mermaid source is plain text; it only becomes a visible diagram when a renderer converts it to SVG. Because the report must be self-contained, offline, and JavaScript-free, render each diagram ahead of time and ship the result as inline SVG, or fall back to a clearly labeled source/ASCII diagram. Choose the path that matches the execution scope the user granted.
+
+**Execution-scope note.** Rendering Mermaid to SVG requires installing tooling and a headless browser. Under this skill's default read-mostly scope (see "Start with narrow questions"), dependency installation is a gated question, not an assumed allowance. So the inline-SVG primary path is only available when the user has granted dependency-install or headless-browser scope. If that scope was not granted, do not silently drop the diagram: use the always-available text fallback and state in the report that diagrams were not rendered because rendering tooling was out of scope.
+
+**Primary path — pre-render to inline SVG (use when render tooling is in scope):**
+
+1. Write each diagram's Mermaid source to its own `.mmd` file under the run folder's `diagrams/` subfolder (for example `diagrams/component-graph.mmd`).
+2. Render it to a static `.svg` with the Mermaid CLI (`mmdc`). Use a config that keeps the SVG offline-portable:
+   - `htmlLabels: false` and `flowchart.htmlLabels: false` so labels become native SVG `<text>` nodes, not `<foreignObject>` HTML (which renders inconsistently and depends on HTML/CSS).
+   - `themeVariables.fontFamily` set to a generic stack such as `ui-sans-serif, system-ui, sans-serif` so the SVG never fetches a webfont.
+   - Give every diagram a unique SVG id with `--svgId` so multiple inlined diagrams do not collide (see step 4).
+   - Example: `npx -p @mermaid-js/mermaid-cli mmdc -i diagrams/component-graph.mmd -o diagrams/component-graph.svg -b transparent -c diagrams/mermaid-config.json --svgId as-built-component-graph`
+3. If installing `mmdc`'s headless-Chromium dependency is out of scope but a local Mermaid install and the Playwright browser (already listed in `references/tooling-matrix.md`) are available, you may instead render in Playwright: load a local copy of `mermaid.js` (from an in-scope local install — never a CDN) in a page and call `mermaid.render()`, then capture the returned SVG string. The bundled Playwright browser alone does not include `mermaid.js`; if you cannot obtain `mermaid.js` offline, do not use this path and do not fetch it from a CDN — use the fallback instead.
+4. Make each inlined SVG collision-free. `mmdc` emits the same root `id` and identical internal fragment ids (markers, gradients, clip paths) for every diagram, so two inlined SVGs would share ids — invalid HTML, and later diagrams' `url(#...)` marker references (arrowheads) would bind to the first SVG's defs, producing wrong or missing arrowheads and CSS bleed. Give each diagram a unique id via `mmdc --svgId`, or post-process the SVG to rewrite the root `id` and every internal fragment id and `url(#...)` reference to a per-diagram prefix. No two inlined `<svg>` blocks may share an id or a `def`/marker id.
+5. Read the generated `.svg`, drop the XML prolog/doctype, keep the `<svg>...</svg>` root (retain its `xmlns` attribute), and paste that markup verbatim into the HTML body inside a `<figure>` with a `<figcaption>`. Do not HTML-escape the SVG markup.
+6. Before shipping, verify each inlined SVG is offline-clean: no `<script>`, no `<foreignObject>`, no `@font-face` or `@import`; the only `http(s)` strings are the W3C `xmlns` namespace URIs (identifiers, not fetches); and every `url(#...)` resolves to a `def` within the same SVG after id uniquification.
+7. Sanitize any repo- or user-derived text used in diagram labels before it reaches the `.mmd`/SVG. Keep diagram styles inside the `<svg>` or the report `<style>`, never an external stylesheet. Record the `.mmd` source, the `mermaid-config.json`, the rendered `.svg`, and the render command in `diagrams/`, the manifest, and the command log.
+
+**Fallback path — always available, no tooling (use when no renderer is in scope):**
+
+1. Provide a simple ASCII box-and-arrow diagram inside a `<pre>` so the report still conveys structure with zero dependencies. This is the baseline that always works.
+2. Optionally also keep the `.mmd` under `diagrams/` and include the HTML-escaped Mermaid source in a clearly labeled `<pre class="mermaid-source">` (optionally inside `<details>`), with a one-line note that it is unrendered Mermaid source because rendering was out of scope and the reader can paste it into any Mermaid renderer to view it.
+3. When escaping `.mmd` source for the `<pre>`, escape `&` first, then `<` and `>`, so Mermaid arrow syntax (`-->`, `---`, `&`) round-trips correctly when copied back into a renderer.
+4. Do not inline a Mermaid runtime and do not reference a CDN to "fix" the fallback; the labeled-source/ASCII form is the intended offline-safe result.
+
+**Hard rules — these are the current bug; never do them:**
+
+- Never put a bare ```` ```mermaid ```` fenced block in the HTML. A Markdown fence is not special inside an HTML document, so it renders as literal backticks and source text, not a diagram.
+- Never put a `<pre class="mermaid">` (or any element holding Mermaid source) into the HTML styled or captioned as a finished diagram. The runtime that would transform it is forbidden and never present, so it would stay inert text. Any Mermaid source that reaches the HTML must be in the fallback block above, explicitly labeled as unrendered source.
+- Never reference a diagram via `<img src="diagrams/...">`. An external image reference violates self-containment and breaks if the folder moves. Inline the `<svg>` instead.
 
 The timestamped run folder is the expected default write. Keep the primary HTML report and manifest mandatory; create additional architecture artifacts only when they materially improve reviewability. Do not create probe files, tests, snapshots, or cleanup changes unless the user explicitly asks.
 

@@ -12,7 +12,8 @@ Default does not mean "always run." Use these tools only when relevant to the di
 | --- | --- | --- |
 | `default` | `dependency-cruiser` | Primary JS/TS dependency-boundary and import graph evidence. MIT licensed. |
 | `default` | `knip` | JS/TS unused files, dependencies, and exports. ISC licensed. |
-| `default` | Mermaid | Default diagram source format for reports. MIT licensed. |
+| `default` | Mermaid | Default diagram authoring format. Source `.mmd` is kept under `diagrams/` and pre-rendered to inline SVG for the report; it is not a renderer on its own. MIT licensed. |
+| `default` | `@mermaid-js/mermaid-cli` (mmdc) | Pre-render Mermaid `.mmd` source to static SVG for inlining into the self-contained HTML report. Build-time only (Node 18.19+/20+ and a headless Chromium via its puppeteer peer dependency); the shipped HTML needs no tooling, JS, or network. mmdc and Mermaid are MIT; puppeteer/Chromium are Apache-2.0/BSD. Requires the user to grant dependency-install/headless-browser scope; if that is out of scope, use the labeled-source or ASCII fallback. Give each diagram a unique `--svgId` so multiple inlined SVGs do not collide. |
 | `default` | Semgrep CE | Local SAST and pattern scanning when security-sensitive architecture boundaries need evidence. LGPL 2.1. Do not use Pro or Platform-only features by default. |
 | `default` | Playwright | Runtime route and UI traces when app execution is allowed. Apache-2.0 licensed. |
 | `default` | Repomix | Bounded Codex review packaging when useful, with strict exclusions for secrets, dependency folders, build output, logs, coverage, and generated artifacts. MIT licensed. |
@@ -41,7 +42,7 @@ Use Semgrep CE by default only for local, open-source scanning. Avoid commercial
 
 ## Diagrams
 
-Use Mermaid source as the default report diagram format. Keep Structurizr optional for C4 or existing Structurizr workflows, and include generated DSL only when that is part of the requested deliverable.
+Author report diagrams as Mermaid by default, then ship them as pre-rendered inline SVG: render each `.mmd` to static SVG with `@mermaid-js/mermaid-cli` (or, if its headless browser is out of scope, with the already-listed Playwright browser using a local — never CDN — Mermaid build), then paste the `<svg>` inline. Give each diagram a unique SVG id so multiple inlined diagrams do not collide, and use `htmlLabels: false` plus a generic `fontFamily` so the SVG stays offline-portable. Never present raw Mermaid source as a finished diagram in the HTML; when no renderer is in scope, show an ASCII text diagram and/or the source in a clearly labeled unrendered-source block. Keep Structurizr optional for C4 or existing Structurizr workflows, and include generated DSL only when that is part of the requested deliverable.
 
 ## License references
 
@@ -52,6 +53,7 @@ Use Mermaid source as the default report diagram format. Keep Structurizr option
 - Compodoc: <https://github.com/compodoc/compodoc>
 - Supabase CLI: <https://github.com/supabase/cli>
 - Mermaid: <https://github.com/mermaid-js/mermaid/blob/develop/LICENSE>
+- @mermaid-js/mermaid-cli (mmdc): <https://github.com/mermaid-js/mermaid-cli>, <https://github.com/mermaid-js/mermaid-cli/blob/master/LICENSE>
 - Structurizr CLI: <https://github.com/structurizr/cli>
 - Structurizr Lite: <https://docs.structurizr.com/lite>
 - GitHub CodeQL CLI: <https://docs.github.com/en/code-security/concepts/code-scanning/codeql/codeql-cli>
